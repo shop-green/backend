@@ -9,5 +9,5 @@
 
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/gateway/:splat"
+  to = "/.netlify/functions/backend/:splat"
   status = 200
