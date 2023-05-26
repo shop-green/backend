@@ -43,10 +43,10 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		w.Write(b)
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "public, max-age=300")
 		w.WriteHeader(http.StatusOK)
+		w.Write(b)
 	})
 	log.Fatal(listener(portStr, nil))
 }
