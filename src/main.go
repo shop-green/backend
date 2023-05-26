@@ -25,6 +25,7 @@ func main() {
 	}
 
 	http.HandleFunc("/api/farmers/find", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		sLongitude := r.URL.Query().Get("location_longitude")
 		var longitude float64
 		var err error
