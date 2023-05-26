@@ -1,9 +1,13 @@
 package main
 
 import (
+	"encoding/json"
+	"flag"
+	"fmt"
+	"log"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/carlmjohnson/gateway"
 )
 
 // farmer represents data about a farmer.
@@ -23,14 +27,26 @@ var farmers = []farmer{
 	{ID: "f03498234", Name: "Sarah Vaughan and Clifford Brown", Rating: 4.6},
 }
 
-// getFarmers responds with the list of all farmers as JSON.
-func getFarmers(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, farmers)
-}
-
 func main() {
-	router := gin.Default()
-	router.GET("/api/farmers/find", getFarmers)
+	port := flag.Int("port", -1, "specify a port to use http rather than AWS Lambda")
+	flag.Parse()
+	listener := gateway.ListenAndServe
+	portStr := ""
+	if *port != -1 {
+		portStr = fmt.Sprintf(":%d", *port)
+		listener = http.ListenAndServe
+		http.Handle("/", http.FileServer(http.Dir("./public")))
+	}
 
-	router.Run("localhost:8080")
+	http.HandleFunc("/api/farmers/find", func(w http.ResponseWriter, r *http.Request) {
+		b, err := json.Marshal(farmers)
+		if err != nil {
+			log.Fatal(err)
+		}
+		w.Write(b)
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Cache-Control", "public, max-age=300")
+		w.WriteHeader(http.StatusOK)
+	})
+	log.Fatal(listener(portStr, nil))
 }
