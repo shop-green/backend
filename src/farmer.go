@@ -10,4 +10,5 @@ type farmer struct {
 	Location                                     geoLocation          `json:"location"`
 	Features                                     []string             `json:"features"`
 	OpeningHoursByDayOfWeekSecondsFromStartOfDay map[string][][]int32 `json:"openingHoursByDayOfWeek_secondsFromStartOfDay"`
+	Distance_km                                  float64              `json:"distance_km"`
 }
