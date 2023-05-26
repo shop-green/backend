@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/carlmjohnson/gateway"
+	"golang.org/x/exp/maps"
 )
 
 // farmers slice to seed record farmer data.
@@ -72,6 +73,21 @@ func getFramerIdsAndDistancesNearByFromKinetica(point geoLocation, maxDistance_k
 	return idsAndDistances, nil
 }
 
+func getFarmersByFiltersFromMongo(
+	ids []string,
+	groceryTypes []string,
+) ([]farmer, error) {
+	var results []farmer = []farmer{}
+	for _, farmer := range farmers {
+		for _, id := range ids {
+			if farmer.ID == id {
+				results = append(results, farmer)
+			}
+		}
+	}
+	return results, nil
+}
+
 func getFramersNearBy(
 	point geoLocation,
 	maxDistance_km float64,
@@ -82,7 +98,13 @@ func getFramersNearBy(
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(idsAndDistances)
+	farmers, err := getFarmersByFiltersFromMongo(maps.Keys(idsAndDistances), groceryTypes)
+	if err != nil {
+		return nil, err
+	}
+	for i, farmer := range farmers {
+		farmers[i].Distance_km = idsAndDistances[farmer.ID] / 1000
+	}
 	return farmers, nil
 }
 
