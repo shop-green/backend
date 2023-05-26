@@ -10,16 +10,6 @@ import (
 	"github.com/carlmjohnson/gateway"
 )
 
-// farmer represents data about a farmer.
-type farmer struct {
-	ID                                           string               `json:"id"`
-	Name                                         string               `json:"name"`
-	Rating                                       float64              `json:"rating"`
-	GroceryTypes                                 []string             `json:"groceryTypes"`
-	OpeningHoursByDayOfWeekSecondsFromStartOfDay map[string][][]int32 `json:"openingHoursByDayOfWeek_secondsFromStartOfDay"`
-	TitleImage                                   string               `json:"titleImage"`
-}
-
 // farmers slice to seed record farmer data.
 var farmers = []farmer{
 	{ID: "f23098490", Name: "The local Farm <3", Rating: 4.6, GroceryTypes: []string{"Strawberry", "Potato"}, OpeningHoursByDayOfWeekSecondsFromStartOfDay: map[string][][]int32{"Monday": {{9 * 3600, 17 * 3600}}, "Tuesday": {{9 * 3600, 17 * 3600}}, "Wednesday": {{9 * 3600, 17 * 3600}}, "Thursday": {{9 * 3600, 17 * 3600}}, "Friday": {{9 * 3600, 17 * 3600}}, "Saturday": {{9 * 3600, 17 * 3600}}, "Sunday": {{9 * 3600, 17 * 3600}}}, TitleImage: "/img/2l092834lskhsieo.svg"},
