@@ -1,9 +1,8 @@
 package main
 
 type address struct {
-	Street  string `json:"street"`
-	Number  string `json:"number"`
-	City    string `json:"city"`
-	ZipCode string `json:"zipCode"`
-	Country string `json:"country"`
+	Street  string `bson:"street" json:"street"`
+	City    string `bson:"city" json:"city"`
+	ZipCode string `bson:"zipCode" json:"zipCode"`
+	Country string `bson:"country" json:"country"`
 }
