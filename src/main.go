@@ -81,11 +81,19 @@ func main() {
 			}
 		}
 		// openingHours_ISO8601 := r.URL.Query().Get("filter_openingHours_ISO8601")
+		sFeatures := r.URL.Query().Get("filter_features")
+		features := make([]string, 0)
+		for _, feature := range strings.Split(sFeatures, ",") {
+			if len(feature) > 0 {
+				features = append(features, feature)
+			}
+		}
 
 		farmers, err := getFramersNearBy(
 			geoLocation{Longitude: longitude, Latitude: latitude},
 			maxDistance_km,
 			groceryTypes,
+			features,
 			// openingHours_ISO8601,
 		)
 		if err != nil {

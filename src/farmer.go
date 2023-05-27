@@ -90,6 +90,7 @@ func getFramerIdsAndDistancesNearByFromKinetica(point geoLocation, maxDistance_k
 func getFarmersByFiltersFromMongo(
 	ids []string,
 	groceryTypes []string,
+	features []string,
 ) ([]farmer, error) {
 	client, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("MONGODB_CONNECTION_STRING")))
 	if err != nil {
@@ -115,14 +116,31 @@ func getFarmersByFiltersFromMongo(
 	}
 	// a filter for mongodb query that checks if the id is in the ids array and the groceryTypes array is a subset of the groceryTypes array in the document
 	var filter bson.D
-	if len(groceryTypes) <= 0 {
+	if len(groceryTypes) <= 0 && len(features) <= 0 {
 		filter = bson.D{{"_id", bson.D{{"$in", objectIds}}}}
-	} else {
+	} else if len(groceryTypes) <= 0 && len(features) > 0 {
+		filter = bson.D{
+			{"$and",
+				bson.A{
+					bson.D{{"_id", bson.D{{"$in", objectIds}}}},
+					bson.D{{"features", bson.D{{"$all", features}}}},
+				}},
+		}
+	} else if len(groceryTypes) > 0 && len(features) <= 0 {
 		filter = bson.D{
 			{"$and",
 				bson.A{
 					bson.D{{"_id", bson.D{{"$in", objectIds}}}},
 					bson.D{{"groceryTypes", bson.D{{"$all", groceryTypes}}}},
+				}},
+		}
+	} else if len(groceryTypes) > 0 && len(features) > 0 {
+		filter = bson.D{
+			{"$and",
+				bson.A{
+					bson.D{{"_id", bson.D{{"$in", objectIds}}}},
+					bson.D{{"groceryTypes", bson.D{{"$all", groceryTypes}}}},
+					bson.D{{"features", bson.D{{"$all", features}}}},
 				}},
 		}
 	}
@@ -146,13 +164,14 @@ func getFramersNearBy(
 	point geoLocation,
 	maxDistance_km float64,
 	groceryTypes []string,
+	features []string,
 	// openingHours time.Time,
 ) ([]farmer, error) {
 	idsAndDistances, err := getFramerIdsAndDistancesNearByFromKinetica(point, maxDistance_km)
 	if err != nil {
 		return nil, err
 	}
-	farmers, err := getFarmersByFiltersFromMongo(maps.Keys(idsAndDistances), groceryTypes)
+	farmers, err := getFarmersByFiltersFromMongo(maps.Keys(idsAndDistances), groceryTypes, features)
 	if err != nil {
 		return nil, err
 	}
