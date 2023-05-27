@@ -11,20 +11,22 @@ import (
 	"strings"
 
 	"github.com/carlmjohnson/gateway"
+	"github.com/gorilla/mux"
 )
 
 func main() {
 	port := flag.Int("port", -1, "specify a port to use http rather than AWS Lambda")
 	flag.Parse()
+	r := mux.NewRouter()
 	listener := gateway.ListenAndServe
 	portStr := ""
 	if *port != -1 {
 		portStr = fmt.Sprintf(":%d", *port)
 		listener = http.ListenAndServe
-		http.Handle("/", http.FileServer(http.Dir("./public")))
+		r.Handle("/", http.FileServer(http.Dir("./public")))
 	}
 
-	http.HandleFunc("/api/farmers/find", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/api/farmers/find", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 
 		if r.Method != "GET" {
@@ -89,7 +91,7 @@ func main() {
 			}
 		}
 
-		farmers, err := getFramersNearBy(
+		farmers, err := getFarmersNearBy(
 			geoLocation{Longitude: longitude, Latitude: latitude},
 			maxDistance_km,
 			groceryTypes,
@@ -113,7 +115,7 @@ func main() {
 		w.Write(b)
 	})
 
-	http.HandleFunc("/api/farmers", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/api/farmers", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 
 		if r.Method != "POST" {
@@ -157,5 +159,60 @@ func main() {
 		w.Write(b)
 	})
 
-	log.Fatal(listener(portStr, nil))
+	r.HandleFunc("/api/farmers/{id}/products", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		if r.Method != "POST" {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+
+		// get farmer id from path
+		farmerId := strings.TrimPrefix(r.URL.Path, "/api/farmers/")
+		farmerId = strings.TrimSuffix(farmerId, "/products")
+		_, err := fromJsonFarmerId(farmerId)
+		if err != nil {
+			log.Print(err)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Invalid farmer id"))
+			return
+		}
+
+		defer r.Body.Close()
+
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Print(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		// deserialize products from request body
+		var products []product
+		err = json.Unmarshal(body, &products)
+		if err != nil {
+			log.Print(err)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Invalid JSON"))
+			return
+		}
+
+		// add product
+		products, err = addProducts(farmerId, products)
+		if err != nil {
+			log.Print(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		b, err := json.Marshal(products)
+		if err != nil {
+			log.Print(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(b)
+	})
+
+	log.Fatal(listener(portStr, r))
 }

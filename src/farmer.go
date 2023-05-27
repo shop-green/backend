@@ -30,6 +30,18 @@ type farmer struct {
 	Distance_km                                  float64              `bson:"-" json:"distance_km,omitempty"`
 }
 
+func toJsonFarmerId(id primitive.ObjectID) string {
+	return "f-" + id.Hex()
+}
+
+func fromJsonFarmerId(id string) (primitive.ObjectID, error) {
+	// if id does not start with "f-", then it is not a farmer id
+	if !strings.HasPrefix(id, "f-") {
+		return primitive.ObjectID{}, fmt.Errorf("Invalid id: %s", id)
+	}
+	return primitive.ObjectIDFromHex(id[2:])
+}
+
 func getFramerIdsAndDistancesNearByFromKinetica(point geoLocation, maxDistance_km float64) (map[string]float64, error) {
 	url := os.Getenv("KINETICA_BASE_URL") + "/execute/sql"
 	method := "GET"
@@ -160,7 +172,7 @@ func getFarmersByFiltersFromMongo(
 	return results, nil
 }
 
-func getFramersNearBy(
+func getFarmersNearBy(
 	point geoLocation,
 	maxDistance_km float64,
 	groceryTypes []string,
@@ -176,7 +188,7 @@ func getFramersNearBy(
 		return nil, err
 	}
 	for i, farmer := range farmers {
-		farmers[i].ID = "f" + farmer.MongoDbID.Hex()
+		farmers[i].ID = toJsonFarmerId(farmer.MongoDbID)
 		farmers[i].Distance_km = idsAndDistances[farmer.MongoDbID.Hex()] / 1000
 	}
 	return farmers, nil
@@ -265,7 +277,7 @@ func addFarmer(farmer farmer) (farmer, error) {
 		return farmer, err
 	}
 
-	farmer.ID = "f" + farmer.MongoDbID.Hex()
+	farmer.ID = toJsonFarmerId(farmer.MongoDbID)
 
 	return farmer, nil
 }
