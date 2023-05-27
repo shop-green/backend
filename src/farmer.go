@@ -35,7 +35,7 @@ func getFramerIdsAndDistancesNearByFromKinetica(point geoLocation, maxDistance_k
 	method := "GET"
 
 	query := fmt.Sprintf(`{
-		"statement": "SELECT id, GEODIST(farmers.longitude, farmers.latitude, %.20f, %.20f) AS distance_m FROM farmers WHERE GEODIST(farmers.longitude, farmers.latitude, %.20f, %.20f) < %.20f;",
+		"statement": "SELECT id, GEODIST(farmers.longitude, farmers.latitude, %.14f, %.14f) AS distance_m FROM farmers WHERE GEODIST(farmers.longitude, farmers.latitude, %.14f, %.14f) < %.14f;",
 		"offset": 0,
 		"limit": 100,
 		"encoding": "json"
@@ -169,8 +169,8 @@ func addFarmerToKinetica(farmer farmer) error {
 
 	sFarmer := fmt.Sprintf(`{
 		"id": "%s",
-		"longitude": %.20f,
-		"latitude": %.20f
+		"longitude": %.14f,
+		"latitude": %.14f
 	}`, farmer.MongoDbID.Hex(), farmer.Location.Longitude, farmer.Location.Latitude)
 	payload := strings.NewReader(sFarmer)
 
