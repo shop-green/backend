@@ -266,6 +266,7 @@ func addFarmerToMongo(farmer farmer) (farmer, error) {
 func addFarmer(farmer farmer) (farmer, error) {
 	farmer.MongoDbID = primitive.ObjectID{}
 	farmer.Distance_km = 0
+	farmer.GroceryTypes = make([]string, 0)
 
 	farmer, err := addFarmerToMongo(farmer)
 	if err != nil {

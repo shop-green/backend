@@ -125,5 +125,18 @@ func addProducts(farmerId string, products []product) ([]product, error) {
 		products[i].FarmerID = toJsonFarmerId(products[i].MongoDbFarmerID)
 	}
 
+	// mongo db update farmer's grocery types to include the new product's grocery types
+	groceryTypes := make([]string, 0)
+	for _, product := range products {
+		groceryTypes = append(groceryTypes, product.GroceryType)
+	}
+	filter := bson.D{{"_id", bson.D{{"$eq", farmerObjectId}}}}
+	update := bson.D{{"$addToSet", bson.D{{"groceryTypes", bson.D{{"$each", groceryTypes}}}}}}
+	collFarmers := client.Database("shopGreenDB").Collection("farmers")
+	_, err = collFarmers.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return products, err
+	}
+
 	return products, nil
 }
