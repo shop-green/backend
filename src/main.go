@@ -162,7 +162,7 @@ func main() {
 	r.HandleFunc("/api/farmers/{id}/products", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 
-		if r.Method != "POST" {
+		if r.Method != "POST" && r.Method != "GET" {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
@@ -178,40 +178,59 @@ func main() {
 			return
 		}
 
-		defer r.Body.Close()
+		if r.Method == "GET" {
+			products, err := getProductsByFarmer(farmerId)
+			if err != nil {
+				log.Print(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			b, err := json.Marshal(products)
+			if err != nil {
+				log.Print(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("Cache-Control", "public, max-age=300")
+			w.WriteHeader(http.StatusOK)
+			w.Write(b)
+		} else if r.Method == "POST" {
+			defer r.Body.Close()
 
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			log.Print(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		// deserialize products from request body
-		var products []product
-		err = json.Unmarshal(body, &products)
-		if err != nil {
-			log.Print(err)
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Invalid JSON"))
-			return
-		}
+			body, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				log.Print(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			// deserialize products from request body
+			var products []product
+			err = json.Unmarshal(body, &products)
+			if err != nil {
+				log.Print(err)
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Invalid JSON"))
+				return
+			}
 
-		// add product
-		products, err = addProducts(farmerId, products)
-		if err != nil {
-			log.Print(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			// add product
+			products, err = addProducts(farmerId, products)
+			if err != nil {
+				log.Print(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			b, err := json.Marshal(products)
+			if err != nil {
+				log.Print(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write(b)
 		}
-		b, err := json.Marshal(products)
-		if err != nil {
-			log.Print(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(b)
 	})
 
 	log.Fatal(listener(portStr, r))
