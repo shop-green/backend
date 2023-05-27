@@ -6,11 +6,11 @@ import (
 )
 
 type kineticaResponse struct {
-	Status   string `json:"status"`
-	Message  string `json:"message"`
-	DataType string `json:"data_type"`
-	Data     string `json:"data"`
-	DataStr  string `json:"data_str"`
+	Status   string      `json:"status"`
+	Message  string      `json:"message"`
+	DataType string      `json:"data_type"`
+	Data     interface{} `json:"data"`
+	DataStr  string      `json:"data_str"`
 }
 
 func parseBodyAsKineticaResponse(body []byte) (kineticaResponse, error) {

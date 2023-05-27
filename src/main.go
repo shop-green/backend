@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -25,6 +26,12 @@ func main() {
 
 	http.HandleFunc("/api/farmers/find", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		if r.Method != "GET" {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+
 		sLongitude := r.URL.Query().Get("location_longitude")
 		var longitude float64
 		var err error
@@ -36,8 +43,8 @@ func main() {
 				return
 			}
 		} else {
-			w.Write([]byte("The parameter 'location_longitude' is required."))
 			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("The parameter 'location_longitude' is required."))
 			return
 		}
 		sLatitude := r.URL.Query().Get("location_latitude")
@@ -50,8 +57,8 @@ func main() {
 				return
 			}
 		} else {
-			w.Write([]byte("The parameter 'location_latitude' is required."))
 			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("The parameter 'location_latitude' is required."))
 			return
 		}
 		sMaxDistance_km := r.URL.Query().Get("maxDistance_km")
@@ -97,5 +104,50 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Write(b)
 	})
+
+	http.HandleFunc("/api/farmers", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		if r.Method != "POST" {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+
+		defer r.Body.Close()
+
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Print(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		// deserialize farmer from request body
+		var farmer farmer
+		err = json.Unmarshal(body, &farmer)
+		if err != nil {
+			log.Print(err)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Invalid JSON"))
+			return
+		}
+
+		// add farmer
+		farmer, err = addFarmer(farmer)
+		if err != nil {
+			log.Print(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		b, err := json.Marshal(farmer)
+		if err != nil {
+			log.Print(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(b)
+	})
+
 	log.Fatal(listener(portStr, nil))
 }

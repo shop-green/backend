@@ -1,6 +1,6 @@
 package main
 
 type geoLocation struct {
-	Longitude float64 `bson:"longitude" json:"longitude"`
-	Latitude  float64 `bson:"latitude" json:"latitude"`
+	Longitude float64 `bson:"longitude,omitempty" json:"longitude,omitempty"`
+	Latitude  float64 `bson:"latitude,omitempty" json:"latitude,omitempty"`
 }
